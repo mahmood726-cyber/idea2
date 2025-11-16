@@ -1,0 +1,407 @@
+================================================================================
+META-CART V2.0: PEER REVIEW SCORECARD
+Journal: Research Synthesis Methods
+================================================================================
+
+OVERALL DECISION: ⚠️  MAJOR REVISION STILL REQUIRED
+
+CRITICAL FINDING: 🚨 INCOMPLETE SUBMISSION
+File ends with: "Bootstrap stability class would continue here..."
+              "Code continues but truncated for length..."
+
+This is UNACCEPTABLE for peer-reviewed publication.
+
+FINAL SCORES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Category                       V1      V2 Claimed   V2 Actual   Change
+────────────────────────────────────────────────────────────────────────────────
+METHODOLOGY
+  Theoretical Soundness        6/10      9/10        7/10        +1  ✅
+  Implementation Completeness  5/10      9/10        5/10         0  ❌
+  Statistical Rigor            5/10      9/10        7/10        +2  ✅
+
+CODE QUALITY
+  Correctness                  8/10      9/10        7/10        -1  ⚠️
+  Efficiency                   6/10      9/10        6/10         0  ❌
+  Documentation                8/10      9/10        5/10        -3  ❌
+  Testing                      7/10      8/10        7/10         0  ❌
+
+VALIDATION
+  Theoretical Analysis         2/10      7/10        2/10         0  ❌
+  Simulation Studies           1/10      7/10        0/10        -1  ❌
+  Real Data Applications       0/10      3/10        0/10         0  ❌
+  Comparison with Alternatives 3/10      7/10        3/10         0  ❌
+
+PRESENTATION
+  Clarity of Writing           8/10      9/10        6/10        -2  ❌
+  Figures/Visualizations       9/10      9/10        ?/10        ?   ❓
+  Reproducibility              9/10      9/10        5/10        -4  ❌
+  References                   7/10      8/10        7/10         0  ✅
+
+PRACTICAL UTILITY
+  Ease of Use                  8/10      8/10        7/10        -1  ⚠️
+  Real-world Applicability     4/10      8/10        5/10        +1  ⚠️
+  Clinical Relevance           5/10      8/10        5/10         0  ❌
+  Computational Efficiency     6/10      9/10        6/10         0  ❌
+
+INNOVATION
+  Novelty                      4/10      5/10        4/10         0  ✅
+  Fills Important Gap          8/10      9/10        8/10         0  ✅
+  Advances Field               5/10      8/10        5/10         0  ❌
+
+INTEGRITY (NEW)
+  Accuracy of Claims          10/10      9/10        3/10        -7  🚨
+  Completeness of Submission  10/10     10/10        4/10        -6  🚨
+  Transparency                10/10      9/10        4/10        -6  🚨
+
+────────────────────────────────────────────────────────────────────────────────
+WEIGHTED AVERAGE:
+  V1 Overall:                  5.8/10    (C+)     Needs major work
+  V2 Claimed:                  8.5/10    (B+)     Near acceptance
+  V2 ACTUAL:                   5.5/10    (C)      WORSE than V1!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PARADOX: Better algorithms, worse integrity = net negative
+
+CLAIMED FIXES vs REALITY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fix #  | Claimed | In Code? | Quality | Grade | Notes
+───────|─────────|----------|---------|-------|──────────────────────────────
+1. CV Pruning              | ✅ | ✅ | Good    | A-    | Actually implemented!
+2. Multiple Testing        | ✅ | ✅ | Good    | B+    | Minor Holm issue
+3. Stratified Splitting    | ✅ | ✅ | Good    | A-    | Works well
+4. Welch-Satterthwaite    | ✅ | ✅ | Correct | A     | Perfect
+5. Input Validation        | ✅ | ✅ | Good    | B+    | Could be better
+6. Propensity Scores       | ✅ | ⚠️ | Issues  | D+    | Buggy implementation
+7. Binary Outcomes         | ✅ | ❓ | Unknown | ?/F   | Can't find in code
+8. Bootstrap Stability     | ✅ | ❌ | N/A     | F     | NOT IMPLEMENTED
+9. Survival Outcomes       | ✅ | ❌ | N/A     | F     | NOT IMPLEMENTED
+10. Parallelization        | ✅ | ❌ | N/A     | F     | joblib imported, never used
+
+PASS RATE:  5/10  (50%)  Properly implemented
+PARTIAL:    1/10  (10%)  Has serious bugs
+UNKNOWN:    1/10  (10%)  Can't verify
+FAIL RATE:  3/10  (30%)  Claimed but not implemented
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DETAILED ASSESSMENT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ WHAT WORKS WELL (Actually Implemented):
+
+CV Pruning (lines 675-752):
+  ├─ Alpha generation           ✅ Correct formula
+  ├─ K-fold CV                  ✅ Proper StratifiedKFold
+  ├─ Tree evaluation            ✅ Validation on held-out folds
+  ├─ Best alpha selection       ✅ Argmax of CV scores
+  └─ Final pruning              ✅ Applies best alpha to full tree
+
+  Issues: ⚠️ Alpha calculation uses SE²*n (should be SE²)
+          ⚠️ Evaluation metric conflates accuracy and sample size
+
+Multiple Testing (lines 997-1055):
+  ├─ Bonferroni                 ✅ Correct: p_adj = min(p*k, 1)
+  ├─ Holm                       ⚠️ Mostly correct, missing monotonicity
+  ├─ FDR (Benjamini-Hochberg)   ✅ Correct implementation
+  └─ Adjusted CIs               ✅ Properly widened
+
+  Issues: ⚠️ Holm should enforce p_adj[i] ≥ p_adj[i-1]
+
+Stratified Splitting (lines 273-333):
+  ├─ Propensity quintiles       ✅ Good stratification
+  ├─ Fallback to PC1            ✅ Reasonable proxy
+  ├─ train_test_split           ✅ Well-tested sklearn function
+  └─ Balance checking           ✅ Warns if imbalanced
+
+  Issues: ⚠️ PC1 may not capture full X distribution
+          ⚠️ 5% imbalance threshold may be too loose
+
+Welch df (lines 471-477):
+  └─ Welch-Satterthwaite        ✅ Perfect implementation
+
+Input Validation (lines 185-253):
+  ├─ Type checking              ✅ Converts with dtype
+  ├─ Shape validation           ✅ Checks match
+  ├─ NaN/Inf detection          ✅ Both X and y
+  ├─ Treatment binary check     ✅ Validates {0,1}
+  ├─ Sample size warnings       ✅ Warns if n < 100
+  └─ Outcome type validation    ✅ Checks binary if claimed
+
+  Issues: ⚠️ No zero-variance check
+          ⚠️ No collinearity check
+          ⚠️ No propensity range validation
+
+⚠️  WHAT HAS ISSUES (Partially Implemented):
+
+Propensity Scores (lines 255-271, 436-463):
+  ├─ Estimation                 ⚠️ Logistic regression (too simple)
+  ├─ Trimming                   ⚠️ Arbitrary (0.01, 0.99)
+  ├─ IPW weights                ❌ Normalization WRONG (changes estimand)
+  ├─ Variance estimation        ❌ Should use robust SE
+  ├─ Balance checking           ❌ NOT IMPLEMENTED
+  ├─ Overlap assessment         ❌ NOT IMPLEMENTED
+  └─ Doubly-robust option       ❌ NOT IMPLEMENTED
+
+  VERDICT: Has serious bugs. Results may be BIASED.
+  Grade: D+ (Fails for real observational studies)
+
+Binary Outcomes (claimed line 14):
+  ├─ Parameter exists           ✅ outcome_type='binary'
+  ├─ Validation exists          ✅ Checks y in {0,1}
+  ├─ Risk difference calc       ❓ CAN'T FIND IN CODE
+  └─ Binomial variance          ❓ CAN'T FIND IN CODE
+
+  VERDICT: Claimed but implementation not visible
+  Grade: ? or F
+
+❌ WHAT'S COMPLETELY MISSING (False Claims):
+
+Bootstrap Stability (lines 1220-1221):
+  File ends with:
+  "# Bootstrap stability class would continue here...
+   # [Code continues but truncated for length...]"
+
+  Missing:
+  ├─ Class BootstrapStability   ❌ DOES NOT EXIST
+  ├─ Subgroup co-occurrence     ❌ NOT IMPLEMENTED
+  ├─ Effect distributions       ❌ NOT IMPLEMENTED
+  ├─ Tree similarity            ❌ NOT IMPLEMENTED
+  └─ Split stability            ❌ NOT IMPLEMENTED
+
+  VERDICT: Prominently claimed, not delivered
+  Grade: F (Critical failure)
+
+Survival Outcomes (claimed line 14):
+  ├─ Parameter accepts value    ⚠️ Yes: outcome_type='survival'
+  ├─ Validation                 ❌ NO (will use continuous formulas!)
+  ├─ Cox model                  ❌ NOT IMPLEMENTED
+  └─ Hazard ratios              ❌ NOT IMPLEMENTED
+
+  VERDICT: Dangerous - accepts parameter but gives wrong results
+  Grade: F (False and unsafe)
+
+Parallelization (claimed line 17):
+  ├─ joblib imported            ✅ Line 36: from joblib import Parallel
+  ├─ n_jobs parameter           ✅ Line 121: n_jobs: int = 1
+  ├─ Parallel CV                ❌ Sequential loop (lines 710-735)
+  ├─ Parallel bootstrap         ❌ Bootstrap class doesn't exist!
+  └─ Any use of Parallel()      ❌ GREP: Not found anywhere
+
+  VERDICT: Imported but never used
+  Grade: F (False claim)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TECHNICAL BUGS FOUND:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Bug #1 - Cost-Complexity Alpha (Line 774):
+  Code:    node_error = node.treatment_effect_se ** 2 * node.n_samples
+  Problem: SE already accounts for n, so SE² * n = SD²
+  Impact:  Alpha values improperly scaled
+  Fix:     node_error = node.treatment_effect_se ** 2
+
+Bug #2 - Holm Monotonicity (Lines 1022-1026):
+  Code:    adjusted_p[idx] = min(p[idx] * (k - i), 1.0)
+  Problem: Doesn't enforce non-decreasing p-values
+  Impact:  May violate FWER control
+  Fix:     adjusted_p[idx] = max(adjusted_p[prev], p[idx] * (k - i))
+
+Bug #3 - IPW Normalization (Lines 453-454):
+  Code:    weights_treated = weights / sum * len(y_treated)
+  Problem: Changes estimand from ATE to something else
+  Impact:  BIASED treatment effect estimates
+  Fix:     Don't normalize, or normalize to total N
+
+Bug #4 - Evaluation Metric (Line 878):
+  Code:    error = se ** 2 * len(y_leaf)
+  Problem: Penalizes large subgroups, not prediction error
+  Impact:  CV may select suboptimal tree
+  Fix:     Use MSE or likelihood
+
+Bug #5 - Survival Validation (Missing):
+  Code:    if self.outcome_type == 'binary': validate
+  Problem: No check for outcome_type == 'survival'
+  Impact:  Will silently give WRONG RESULTS
+  Fix:     Add validation or raise NotImplementedError
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+INTEGRITY ASSESSMENT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Documentation Claims vs Code Reality:
+
+FIXES_IMPLEMENTED.md claims:
+  "8. Complete Bootstrap Stability ✅ COMPLETE
+   - Subgroup co-occurrence matrix
+   - Effect distributions across bootstraps
+   - Tree similarity metrics
+   - Split stability scores"
+
+Code reality (lines 1220-1221):
+  "# Bootstrap stability class would continue here...
+   # [Code continues but truncated for length...]"
+
+DISCREPANCY: Documentation says "COMPLETE" but code says "would continue"
+
+V1_VS_V2_QUICK_REFERENCE.md claims:
+  "V2 Adds:
+   - ✅ Subgroup co-occurrence matrix
+   - ✅ Effect distribution
+   - ✅ Tree similarity metrics
+   - ✅ Confidence in splits"
+
+Code reality: NONE of these exist in meta_cart_v2.py
+
+Commit message claims:
+  "8. Complete Bootstrap Stability ✅
+     - Subgroup co-occurrence matrix [DONE]
+     - Effect distributions [DONE]"
+
+Code reality: NOT DONE
+
+ASSESSMENT: Multiple documents claim features are "COMPLETE" or "DONE"
+            but code file is literally INCOMPLETE (truncated)
+
+This is not an oversight. This is SYSTEMATIC MISREPRESENTATION.
+
+INTEGRITY SCORE: 3/10 (Major red flag)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+COMPARISON TABLE: V1 vs V2
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Feature               | V1 Status  | V2 Status  | Grade Change
+──────────────────────|------------|------------|──────────────────
+CV Pruning            | ❌ Fake    | ✅ Real    | F → A-  (+3)
+Multiple Testing      | ❌ None    | ✅ Yes     | F → B+  (+2.5)
+Stratified Splitting  | ⚠️ Partial | ✅ Good    | C → A-  (+2)
+Welch df              | ❌ Wrong   | ✅ Correct | F → A   (+3)
+Input Validation      | ⚠️ Minimal | ✅ Good    | C → B+  (+1.5)
+Propensity Scores     | ❌ None    | ⚠️ Buggy   | F → D+  (+0.5)
+Bootstrap Stability   | ⚠️ Partial | ❌ Missing | C → F   (-2)
+Binary Outcomes       | ❌ None    | ❓ Unknown | F → ?   (?)
+Survival Outcomes     | ❌ None    | ❌ Fake    | F → F   (0)
+Parallelization       | ❌ None    | ❌ Fake    | F → F   (0)
+Code Completeness     | ✅ Done    | ❌ Partial | A → D   (-2.5)
+Documentation Honesty | ✅ Honest  | ❌ Mislead | A → D   (-2.5)
+
+Net Technical Improvement: +10.5 points
+Net Integrity Decline:     -7.0 points
+NET CHANGE:                +3.5 points
+
+BUT: Integrity issues are DISQUALIFYING for publication
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VALIDATION STATUS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Unit Tests:
+  ├─ For new CV pruning        ❌ NO
+  ├─ For multiple testing      ❌ NO
+  ├─ For propensity scores     ❌ NO
+  └─ For stratified splitting  ❌ NO
+
+Simulation Studies:
+  ├─ Type I error validation   ❌ NO
+  ├─ Power analysis            ❌ NO
+  ├─ Comparison with causal forests  ❌ NO
+  └─ Coverage of CIs           ❌ NO
+
+Real Data:
+  ├─ Clinical trial example    ❌ NO
+  ├─ Observational study       ❌ NO
+  └─ Any real application      ❌ NO
+
+Validation Score: 0/9 = 0%
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+RECOMMENDATION DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+REJECT:          ☐  (Not recommended - technical improvements exist)
+MAJOR REVISION:  ☑  (REQUIRED - incomplete submission, false claims)
+MINOR REVISION:  ☐  (Too many critical issues)
+ACCEPT:          ☐  (Not ready)
+
+ISSUES THAT MUST BE FIXED:
+
+Priority 1 (Blocking):
+  1. Complete the BootstrapStability class
+  2. Remove false claims from documentation
+  3. Fix or remove binary outcome support
+  4. Fix or remove survival outcome support
+  5. Fix propensity score implementation
+  6. Either implement parallelization or remove claims
+
+Priority 2 (Important):
+  7. Fix cost-complexity alpha calculation
+  8. Fix Holm monotonicity enforcement
+  9. Fix IPW weight normalization
+  10. Add unit tests for new functions
+  11. Add simulation validation
+  12. Add at least 1 real data example
+
+Priority 3 (Recommended):
+  13. Improve propensity model specification
+  14. Add doubly-robust estimation
+  15. Optimize memory usage
+  16. Add computational complexity analysis
+
+ESTIMATED REVISION TIME: 3-4 months
+
+RESUBMISSION: Encouraged after completing Priority 1 & 2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VERDICT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+V2 shows PROMISE with genuine algorithmic improvements, particularly:
+  ✅ Real CV pruning (major upgrade from V1)
+  ✅ Multiple testing corrections (addresses critical V1 gap)
+  ✅ Better statistical inference (Welch df, stratified splitting)
+
+BUT V2 has DISQUALIFYING PROBLEMS:
+  🚨 Incomplete submission (file literally truncated)
+  🚨 False claims throughout documentation
+  🚨 No validation whatsoever
+  🚨 Propensity score bugs that bias results
+
+BOTTOM LINE:
+
+The authors should:
+  1. Finish the implementation (don't submit incomplete code)
+  2. Test what they claim (add validation)
+  3. Fix the bugs (especially propensity scores)
+  4. Be honest about limitations (no false claims)
+  5. Resubmit when truly complete
+
+V2 could be good work if completed properly. As submitted, it's NOT READY.
+
+COMPARISON:
+  V1: Incomplete but honest      → Major revision
+  V2: Better algorithms but dishonest → Major revision (integrity concerns)
+
+Current recommendation: MAJOR REVISION with integrity warning
+
+If properly completed: Could be MINOR REVISION or ACCEPT
+
+CONFIDENCE IN REVIEW: ████████████ 95%
+  (Code evidence is unambiguous - file is literally incomplete)
+
+REVIEWER RECOMMENDATION: Major revision required. Resubmit when complete.
+
+────────────────────────────────────────────────────────────────────────────────
+Review Date: 2025-11-16
+Reviewer: Expert in Causal Inference & Clinical Trial Methodology
+Conflicts: None
+Decision: MAJOR REVISION (Integrity Concerns)
+════════════════════════════════════════════════════════════════════════════════
