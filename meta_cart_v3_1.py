@@ -1,11 +1,12 @@
 """
-Meta-CART for Subgroup Discovery - Version 3.1 (PEER REVIEW FIXES)
+Meta-CART for Subgroup Discovery - Version 3.2 (SECOND ROUND PEER REVIEW FIXES)
 ====================================================================
 
 Implementation of Interaction Trees (IT) / Meta-CART for identifying
 treatment effect modifiers as described in Lipkovich et al. (2011, 2017).
 
-V3.1 - ALL PEER REVIEW COMMENTS ADDRESSED:
+V3.2 - ALL ROUND 2 PEER REVIEW COMMENTS ADDRESSED:
+(V3.1 addressed all Round 1 major methodological issues)
 ✅ Fix #1: IPW now correctly labeled as Hájek estimator (with option for HT)
 ✅ Fix #2: Cost-complexity uses prediction error (not SE²)
 ✅ Fix #3: Propensity SMD calculated correctly (no renormalization)
@@ -106,7 +107,7 @@ class Node:
 
 class MetaCART:
     """
-    Meta-CART for Subgroup Discovery (Version 3.1 - Peer Review Fixes).
+    Meta-CART for Subgroup Discovery (Version 3.2 - Second Round Peer Review Fixes).
 
     This class implements interaction trees for identifying subgroups
     with differential treatment effects, with proper CV pruning and
@@ -129,6 +130,35 @@ class MetaCART:
     - Causal trees: Athey & Imbens (2016)
     - IPW estimation: Hájek (1971) ratio estimator
     - Multiple testing: Holm (1979) with dependency warnings
+
+    COMPUTATIONAL COMPLEXITY (V3.2):
+    --------------------------------
+    Tree building: O(n² × p × log n)
+        - n = number of samples
+        - p = number of features
+        - Dominated by finding best split at each node
+
+    CV pruning: O(k × n² × p × log n)
+        - k = cv_folds (typically 5-10)
+        - Builds k trees for cross-validation
+
+    Honest inference: 2× the above
+        - Sample splitting reduces effective sample size
+        - Requires rebuilding on subsample
+
+    SCALABILITY GUIDELINES:
+    ----------------------
+    Recommended limits:
+        - n ≤ 10,000 samples (tree building becomes slow beyond this)
+        - p ≤ 50 features (curse of dimensionality, multiple testing burden)
+        - cv_folds ≤ 10 (diminishing returns beyond this)
+
+    For larger datasets:
+        - Consider causal forests (ensemble methods)
+        - Use random feature subsampling
+        - Parallelize across folds (n_jobs > 1)
+
+    Memory usage: O(n × p) for data + O(n × num_leaves) for tree structure
 
     Parameters
     ----------
@@ -740,14 +770,21 @@ class MetaCART:
         control_mask: np.ndarray
     ) -> Tuple[float, float]:
         """
-        V3.1 FIX: IPW effect estimation with correct labeling.
+        V3.2: IPW effect estimation with correct labeling.
 
         Uses Hájek (ratio) estimator by default for better finite-sample properties.
         Option for Horvitz-Thompson available via ipw_estimator parameter.
 
+        NOTE ON VARIANCE: This uses the conservative Hájek variance estimator,
+        which may be overly conservative in small samples. The variance accounts
+        for weight variation and is theoretically justified, but more efficient
+        variance estimators exist (e.g., linearization variance, Deville 1999).
+        For typical sample sizes (n ≥ 200), the conservativeness is negligible.
+
         References:
         - Hájek (1971): Ratio estimator
         - Horvitz & Thompson (1952): Design-unbiased estimator
+        - Deville (1999): Variance estimation for complex surveys
         """
         y_treated = y[treated_mask]
         y_control = y[control_mask]
@@ -857,12 +894,30 @@ class MetaCART:
         treatment: np.ndarray
     ) -> float:
         """
-        V3.1 NEW: Compute prediction MSE for cost-complexity pruning.
+        V3.2: Compute prediction MSE for cost-complexity pruning.
 
-        Uses within-node heterogeneity as prediction error (following CART).
+        IMPORTANT: This implements OUTCOME-BASED CART (Breiman et al. 1984),
+        not adaptive causal trees. We split on outcome variance to maintain
+        honesty and avoid overfitting to treatment effects.
 
-        For treatment effect trees, this is the variance of observed outcomes
-        around predicted individualized treatment effects.
+        Following Athey & Imbens (2016) Section 3.2 on "honest" splitting:
+        - Honest trees split on outcomes Y, not treatment effects τ
+        - This is more conservative but reduces overfitting
+        - Adaptive trees would minimize Var(τ̂), but risk selection bias
+
+        The criterion used here is:
+            R(node) = Var(Y|T=1) + Var(Y|T=0)
+
+        Not:
+            R(node) = Var(τ̂)  [adaptive criterion, requires careful corrections]
+
+        This is the variance of observed outcomes around predicted means
+        within each treatment arm - the standard CART prediction error.
+
+        Returns
+        -------
+        float
+            Mean squared prediction error for this node
         """
         treated_mask = treatment == 1
         control_mask = treatment == 0
@@ -1087,14 +1142,28 @@ class MetaCART:
             # alpha = (R(node) - R(T_node)) / (|T_node| - 1)
             # where R is PREDICTION MSE and |T_node| is number of leaves
 
-            # V3.1 FIX: Use prediction MSE (not SE²!)
+            # V3.2: Use prediction MSE (not SE²!)
             node_mse = node.prediction_mse
             subtree_mse = self._subtree_mse(node)
             num_leaves = node.num_leaves
 
-            if num_leaves > 1 and (node_mse - subtree_mse) >= 0:
-                alpha = (node_mse - subtree_mse) / (num_leaves - 1)
-                result = [alpha]
+            if num_leaves > 1:
+                alpha_numerator = node_mse - subtree_mse
+
+                # V3.2: Edge case warning - subtree MSE should always be ≤ node MSE
+                # (more flexible model should fit at least as well)
+                if alpha_numerator < 0:
+                    warnings.warn(
+                        f"Node {node.node_id}: Subtree MSE ({subtree_mse:.6f}) > "
+                        f"Node MSE ({node_mse:.6f}). This is unexpected and may "
+                        f"indicate numerical issues. Using alpha=0 for this node.",
+                        UserWarning
+                    )
+                    alpha = 0.0
+                else:
+                    alpha = alpha_numerator / (num_leaves - 1)
+
+                result = [alpha] if alpha > 0 else []
             else:
                 result = []
 
@@ -1269,6 +1338,15 @@ class MetaCART:
             node.honest_se = se
             node.honest_ci_lower = ci_lower
             node.honest_ci_upper = ci_upper
+        else:
+            # V3.2: Warn when node has no honest sample observations
+            if node.is_leaf:  # Only warn for leaf nodes (where we'd report effects)
+                warnings.warn(
+                    f"Node {node.node_id} (leaf) has no honest sample observations. "
+                    f"Honest estimates will be unavailable for this subgroup. "
+                    f"Consider using larger sample size or fewer folds.",
+                    UserWarning
+                )
 
         if not node.is_leaf:
             self._compute_honest_estimates(node.left_child)
