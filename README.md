@@ -5,6 +5,29 @@
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## Running & tests
+
+Install the dependencies and run the test suite:
+
+```bash
+pip install -r requirements.txt
+python -m pytest -q
+```
+
+The current, maintained implementation is **`meta_cart_v3.py`** (import as
+`from meta_cart_v3 import MetaCART`). The older `meta_cart.py` (v1) and
+`meta_cart_v2.py` (v2) are kept for reference and are still imported by the
+example/visualization scripts; see `README_V3.md` for the v3 API and the
+review `*.md` files for the development history.
+
+```python
+from meta_cart_v3 import MetaCART  # canonical / current API
+```
+
+Plotting helpers in `visualization.py` and the `*_example.py` scripts use the
+non-interactive Matplotlib `Agg` backend, so they import and run headlessly
+without opening windows.
+
 ## Overview
 
 Meta-CART (Model-based Adaptive Recursive Tree) is a principled statistical method for discovering subgroups with differential treatment effects. Unlike traditional subgroup analysis that suffers from multiple testing issues and p-hacking, Meta-CART provides:

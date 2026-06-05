@@ -251,10 +251,16 @@ class TestPropensityDiagnostics:
         n = 300
         X = np.random.randn(n, 2)
 
-        # Create severe overlap violation
-        X[0, 0] = 10.0  # Extreme value -> propensity near 1
-
-        treatment = np.random.binomial(1, 0.5, n)
+        # Create a severe overlap (positivity) violation: make treatment
+        # near-deterministically predictable from X[:, 0]. A large coefficient
+        # pushes fitted propensities toward 0/1 for extreme covariate values,
+        # which is what the diagnostic is meant to flag. (The previous version
+        # assigned treatment at random, independent of X, so the logistic
+        # propensity model never produced scores near 0 or 1 and no warning
+        # could ever fire — a broken test, not a code bug.)
+        logits = 4.0 * X[:, 0]
+        p_true = 1.0 / (1.0 + np.exp(-logits))
+        treatment = np.random.binomial(1, p_true)
         y = 5 + treatment * 2 + np.random.randn(n)
 
         model = MetaCART(

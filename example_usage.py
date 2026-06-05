@@ -17,6 +17,8 @@ The goal is to identify these subgroups in a statistically rigorous way.
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")  # non-interactive backend: safe for headless import/use
 import matplotlib.pyplot as plt
 from meta_cart import MetaCART, BootstrapStability
 from visualization import (
