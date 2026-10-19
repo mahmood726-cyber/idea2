@@ -948,6 +948,8 @@ class MetaCART:
         # Recursively prune children first
         tree.left_child = self._prune_with_alpha(tree.left_child, alpha)
         tree.right_child = self._prune_with_alpha(tree.right_child, alpha)
+        # Children may themselves have been pruned; refresh the live leaf count.
+        tree.num_leaves = tree.left_child.num_leaves + tree.right_child.num_leaves
 
         # Check if should collapse this node
         # V3 FIX #1: Use SE² not SE² × n
@@ -958,7 +960,8 @@ class MetaCART:
         if num_leaves > 1:
             cost_complexity_gain = (node_error - subtree_error) - alpha * (num_leaves - 1)
 
-            if cost_complexity_gain >= 0:
+            # A positive gain favors retaining the subtree, not pruning it.
+            if cost_complexity_gain <= 0:
                 # Collapse to leaf
                 tree.is_leaf = True
                 tree.left_child = None
